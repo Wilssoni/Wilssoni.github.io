@@ -1,10 +1,27 @@
 
 
 body {
-  background-color: pink;
+  background-color: black;
 }
 
 h1 {
   color: white;
   margin-left: 20px;
+}
+
+h2 {
+  color: white;
+  margin-left: 40px;
+}
+
+p {
+  color: white;
+}
+
+a {
+  color: white;
+}
+
+span {
+  color: white;
 }
