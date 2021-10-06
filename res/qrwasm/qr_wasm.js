@@ -1,20 +1,12 @@
 
 let wasm;
 
-let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
-
-cachedTextDecoder.decode();
-
 let cachegetUint8Memory0 = null;
 function getUint8Memory0() {
     if (cachegetUint8Memory0 === null || cachegetUint8Memory0.buffer !== wasm.memory.buffer) {
         cachegetUint8Memory0 = new Uint8Array(wasm.memory.buffer);
     }
     return cachegetUint8Memory0;
-}
-
-function getStringFromWasm0(ptr, len) {
-    return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
 
 let WASM_VECTOR_LEN = 0;
@@ -25,19 +17,42 @@ function passArray8ToWasm0(arg, malloc) {
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
+
+let cachegetInt32Memory0 = null;
+function getInt32Memory0() {
+    if (cachegetInt32Memory0 === null || cachegetInt32Memory0.buffer !== wasm.memory.buffer) {
+        cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
+    }
+    return cachegetInt32Memory0;
+}
+
+let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
+
+cachedTextDecoder.decode();
+
+function getStringFromWasm0(ptr, len) {
+    return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
+}
 /**
 * @param {Uint8Array} buff
 * @param {number} height
 * @param {number} width
+* @returns {string}
 */
 export function read_qr(buff, height, width) {
     try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         var ptr0 = passArray8ToWasm0(buff, wasm.__wbindgen_malloc);
         var len0 = WASM_VECTOR_LEN;
-        wasm.read_qr(ptr0, len0, height, width);
+        wasm.read_qr(retptr, ptr0, len0, height, width);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
     } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
         buff.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
         wasm.__wbindgen_free(ptr0, len0 * 1);
+        wasm.__wbindgen_free(r0, r1);
     }
 }
 
@@ -77,10 +92,7 @@ async function init(input) {
         input = new URL('qr_wasm_bg.wasm', import.meta.url);
     }
     const imports = {};
-    imports.wbg = {};
-    imports.wbg.__wbg_alert_0ee4f43cb8d4a39e = function(arg0, arg1) {
-        alert(getStringFromWasm0(arg0, arg1));
-    };
+
 
     if (typeof input === 'string' || (typeof Request === 'function' && input instanceof Request) || (typeof URL === 'function' && input instanceof URL)) {
         input = fetch(input);

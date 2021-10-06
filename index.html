@@ -36,7 +36,10 @@
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.drawImage(img, 0, 0, canvas.width, canvas.height);
       var imageBytes = context.getImageData(0, 0, canvas.width, canvas.height).data;
-      read_qr(imageBytes, canvas.width, canvas.height);
+      var qrstring = read_qr(imageBytes, canvas.width, canvas.height);
+      if (qrstring != "") {
+        alert(qrstring);  
+      }
     }
 
     var file = document.getElementById("qr_file");
