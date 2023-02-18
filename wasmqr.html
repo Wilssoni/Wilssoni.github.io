@@ -1,0 +1,55 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Wilssoni's GitRepoPage</title>
+  <meta name="description" content="Wilssoni's GitRepoPage">
+  <meta name="author" content="Vili" >
+  <link rel="stylesheet" type="text/css" href="res/styles.css">
+</head>
+
+<body>
+<div class="content-container">
+<div class="header">
+<h1>qr-wasm - QRcode reader implemented in WebAssembly!</h1>
+</div>
+<div class="content-body">
+<div class="qrwasm-body">
+  <h3>Test qr-wasm yourself! Upload a image with qr-code and see the magic happen!</h3>
+  <input type="file" id="qr_file">
+  <canvas height="300" width="300" id="qr_canvas"></canvas><br>
+  <p>Link to repo: <a href="https://github.com/Wilssoni/qr-wasm">qr-wasm</a>
+</div>
+</div>
+<div class="footer">
+THIS IS A FOOTER
+</div>
+</div>
+</body>
+</html>
+
+<script type="module">
+  import init, {read_qr} from "./res/qrwasm/qr_wasm.js";
+
+  init().then((instance) => {
+    var canvas = document.getElementById("qr_canvas");
+    var img = new Image();
+    var context = canvas.getContext('2d');
+    img.onload = function() {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      var imageBytes = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      var qrstring = read_qr(imageBytes, canvas.width, canvas.height);
+      if (qrstring != "") {
+        alert(qrstring);  
+      }
+    }
+
+    var file = document.getElementById("qr_file");
+    file.onchange = function() {
+      img.src = URL.createObjectURL(this.files[0]);
+    };
+  });
+</script>
+</html>
