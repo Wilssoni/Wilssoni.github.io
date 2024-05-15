@@ -1,17 +1,29 @@
 
 
 html {height: 100%;}
+
 body {
   height: 100%;
   background-color: black;
   color: white;
 }
 
-div {
-	border-color: white;
-	border-style: solid;
-	border-width: 1px;
+@keyframes greenpulse {
+  0% {border-color:limegreen;}
+  50% {border-color: green;}
+  100% {border-color: limegreen;}
+  
 }
+
+div {
+  border-color: limegreen;
+  border-width: 1px;
+  border-style: solid;
+  animation-duration: 4s;
+  animation-name: greenpulse;
+  animation-iteration-count: infinite;
+}
+
 h1 {
   margin-left: 20px;
 }
@@ -40,3 +52,4 @@ h2 {
 .qrwasm-body {
   padding: 10px 30px;
 }
+
