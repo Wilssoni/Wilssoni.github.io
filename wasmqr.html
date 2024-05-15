@@ -52,7 +52,7 @@ THIS IS A FOOTER
   }
   var video = document.getElementById('video');
 
-  navigator.mediaDevices.getUserMedia({video: {width:900, height:900}, audio: false}).then(function success(stream) {
+  navigator.mediaDevices.getUserMedia({video: {width:900, height:900}, audio: false, facingMode: 'environment'}).then(function success(stream) {
     video.srcObject = stream;
   }).catch((e) => {
     console.log(e);
