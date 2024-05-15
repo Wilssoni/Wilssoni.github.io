@@ -17,8 +17,14 @@
 <div class="content-body">
 <div class="qrwasm-body">
   <h3>Test qr-wasm yourself! Upload a image with qr-code and see the magic happen!</h3>
+  <h4>Upload an image</h4>
   <input type="file" id="qr_file">
-  <canvas height="300" width="300" id="qr_canvas"></canvas><br>
+  <h4>or</h4>
+  <h4>Scan with a camera</h4>
+  <canvas hidden height="300" width="300" id="qr_canvas"></canvas>
+  <span>Click/touch video feed to scan for QR</span><br>
+  <video width="300" height="300" id="video" autoplay playsinline></video><br>
+  <br>
   <p>Link to repo: <a href="https://github.com/Wilssoni/qr-wasm">qr-wasm</a>
 </div>
 </div>
@@ -32,24 +38,87 @@ THIS IS A FOOTER
 <script type="module">
   import init, {read_qr} from "./res/qrwasm/qr_wasm.js";
 
-  init().then((instance) => {
-    var canvas = document.getElementById("qr_canvas");
-    var img = new Image();
-    var context = canvas.getContext('2d');
-    img.onload = function() {
+  var canvas = document.getElementById("qr_canvas");
+  var context = canvas.getContext('2d', {willReadFrequently:true});
+  var loaded = false;
+  var intervalId;
+  var file = document.getElementById("qr_file");
+  var img = new Image();
+
+  function initialize() {
+    init().then((instance) => {
+      loaded = true;
+    });
+  }
+  var video = document.getElementById('video');
+
+  navigator.mediaDevices.getUserMedia({video: {width:900, height:900}, audio: false}).then(function success(stream) {
+    video.srcObject = stream;
+  }).catch((e) => {
+    console.log(e);
+  });
+
+  function stopScan()
+  {
+    clearInterval(intervalId);
+  }
+
+  function foundHandle(qrstring)
+  {
+    console.log(qrstring);
+    alert(qrstring);
+    stopScan();
+  }
+
+  function redrawcanvas()
+  {
+    if (loaded) {
       context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
       var imageBytes = context.getImageData(0, 0, canvas.width, canvas.height).data;
-      var qrstring = read_qr(imageBytes, canvas.width, canvas.height);
-      if (qrstring != "") {
-        alert(qrstring);  
+      try {
+        var qrstring = read_qr(imageBytes, canvas.width, canvas.height);
+        if (qrstring != "") {
+          foundHandle(qrstring);
+        } else {
+          console.log("not found");
+        }
+      } catch (e) {
+        console.log("Error" + e);
+        if (e == "RuntimeError: memory access out of bounds") {
+          stopScan();
+          loaded = false;
+          initialize();
+          startScan();
+        } else if (e == "RuntimeError: unreachable executed") {
+          stopScan();
+          loaded = false;
+          initialize();
+          startScan();
+        }
       }
     }
+  }
 
-    var file = document.getElementById("qr_file");
-    file.onchange = function() {
-      img.src = URL.createObjectURL(this.files[0]);
-    };
-  });
+  function startScan()
+  {
+    intervalId = setInterval(redrawcanvas, 100);
+  }
+  initialize();
+  document.getElementById('video').addEventListener("click", startScan);
+
+  file.onchange = function() {
+    img.src = URL.createObjectURL(this.files[0]);
+  };
+
+  img.onload = function() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+    var imageBytes = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    var qrstring = read_qr(imageBytes, canvas.width, canvas.height);
+    if (qrstring != "") {
+      alert(qrstring);  
+    }
+  };
 </script>
 </html>
