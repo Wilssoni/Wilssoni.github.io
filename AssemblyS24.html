@@ -45,6 +45,7 @@
                        playButton.dataset.playing = "false";
                        running = false;
                        canvas.removeEventListener("touchend", touchend_handler);
+                       glsl = new GlslCanvas(canvas);
                    }
                 });
 
@@ -85,7 +86,6 @@
 
         window.addEventListener("keydown", function(e) {
           if (e.code == "ArrowRight") {
-            console.log("foo");
             scene++;
           }
         });
@@ -201,8 +201,10 @@
         }
 
         function audioupdateloop() {
+          if (running) {
             window.requestAnimationFrame(audioupdateloop);
-            print_fft();
+          }
+          print_fft();
         }
 
     </script>
