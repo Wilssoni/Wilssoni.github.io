@@ -1,0 +1,202 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="AsS24_resources/styles.css">
+        <title>Assy24Demo</title>
+    </head>
+    <body>
+        <h4>Beginner demo entry for Assembly Summer 2024</h4>
+        <h5>graphics by: wilssoni & music by: NEETMEM</h5>
+        <canvas id="canvas" width="0" height="0"></canvas>
+        <audio src="AsS24_resources/alien_deliverance.wav" type="audio/wav"></audio>
+        <div>
+        <button data-playing="false" role="switch" aria-checked="false">
+            <span>Play</span>
+        </button>
+        </div>
+    </body>
+    <script type="text/javascript" src="AsS24_resources/GlslCanvas.js"></script>
+    <script>
+        var canvas = document.querySelector("canvas");
+        var running = false;
+        var start_time = 0;
+        var scene = 0.0;
+        var glsl = new GlslCanvas(canvas);
+
+        function fullscreen() {
+            var el = document.getElementById("canvas");
+
+            if (el.webkitRequestFullScreen) {
+                el.webkitRequestFullScreen();
+            } else {
+                el.mozRequestFullScreen();
+            }
+        }
+
+        canvas.addEventListener("fullscreenchange", function (e) {
+                   if (document.fullscreenElement == null) {
+                       canvas.width = 0;
+                       canvas.height = 0;
+                       audioElement.load();
+                       playButton.dataset.playing = "false";
+                       running = false;
+                   }
+                });
+
+        function load_frag() {
+            fetch("AsS24_resources/shader.frag")
+                .then((response) => response.text())
+                .then((data) => {
+                    glsl.load(data);
+                });
+        }
+
+        function load_vert() {
+            fetch("AsS24_resources/shader.vert")
+                .then((response) => response.text())
+                .then((data) => {
+                    glsl.load(false, data);
+                });
+        }
+
+        const audioContext = new AudioContext();
+        const analyser = audioContext.createAnalyser();
+
+        analyser.smoothingTimeConstant = 0.85;
+
+        // get the audio element
+        const audioElement = document.querySelector("audio");
+
+        // pass it into the audio context
+        const track = audioContext.createMediaElementSource(audioElement);
+
+        //console.log(audioContext.sampleRate);
+
+        track.connect(analyser);
+        track.connect(audioContext.destination);
+
+        // Select our play button
+        const playButton = document.querySelector("button");
+
+        window.addEventListener("keydown", function(e) {
+          if (e.code == "ArrowRight") {
+            console.log("foo");
+            scene++;
+          }
+        });
+
+        playButton.addEventListener(
+            "click",
+            () => {
+                if (playButton.dataset.playing === "false") {
+                    audioElement.play();
+                    playButton.dataset.playing = "true";
+                    start_time = new Date().getTime();
+                    if (!running) {
+                        glsl = new GlslCanvas(canvas);
+                        glsl.setUniform("u_siika", "AsS24_resources/siika.png");
+                        glsl.setUniform("u_credits", "AsS24_resources/credits.png");
+                        scene = 0.0;
+                        fullscreen();
+                        load_frag();
+                        load_vert();
+                        audioupdateloop();
+                    }
+                    running = true;
+                } else if (playButton.dataset.playing === "true") {
+                    audioElement.load();
+                    playButton.dataset.playing = "false";
+                    running = false;
+                }
+            },
+            false,
+        );
+
+        audioElement.addEventListener(
+            "ended",
+            () => {
+                playButton.dataset.playing = "false";
+            },
+            false,
+        );
+
+        analyser.fftSize = 2048;
+        const bufferLength = analyser.frequencyBinCount;
+        //var dataArray = new Float32Array(analyser.frequencyBinCount);
+        var dataArray = new Uint8Array(analyser.frequencyBinCount);
+        var levels = { low: 0, mid: 0, high: 0 };
+        let lowFLimit = 200;
+        let midFLimit = 2000;
+
+        function frequency(samplerate, fftsize, index) {
+            return (index * samplerate) / fftsize;
+        }
+
+        function calculateVolumes() {
+            var level = 0;
+            var index = 0;
+            var f = 0.0;
+            levels = { low: 0, mid: 0, high: 0 };
+            var lowCount = 0;
+            var midCount = 0;
+            var highCount = 0;
+
+            while (index < dataArray.length) {
+                f = frequency(audioContext.sampleRate, analyser.fftSize, index);
+                if (f <= lowFLimit) {
+                    levels["low"] += dataArray[index];
+                    lowCount++;
+                } else if (f > lowFLimit && f <= midFLimit) {
+                    levels["mid"] += dataArray[index];
+                    midCount++;
+                } else {
+                    levels["high"] += dataArray[index];
+                    highCount++;
+                }
+                index++;
+            }
+            levels["low"] /= lowCount * 255;
+            levels["mid"] /= midCount * 255;
+            levels["high"] /= highCount * 255;
+        }
+
+        function print_fft() {
+            analyser.getByteFrequencyData(dataArray);
+            calculateVolumes();
+
+            var elapsed = new Date().getTime() - start_time;
+            if (running &&(elapsed > 20571)) {
+              scene = 1.0;
+            }
+            if (running &&(elapsed > 34286)) {
+              scene = 2.0;
+            }
+            if (running &&(elapsed > 41143)) {
+              scene = 3.0;
+            }
+            if (running &&(elapsed > 80500)) {
+              scene = 4.0;
+            }
+            if (running &&(elapsed > 108000)) {
+              scene = 5.0;
+            }
+            if (running &&(elapsed > 130000)) {
+              scene = 6.0;
+            }
+            if (running &&(elapsed > 155000)) {
+              scene = 7.0;
+            }
+
+            glsl.setUniform("u_fft_low", levels["low"]);
+            glsl.setUniform("u_fft_mid", levels["mid"]);
+            glsl.setUniform("u_fft_high", levels["high"]);
+            glsl.setUniform("u_scene", scene);
+            glsl.setUniform("u_rand", Math.random());
+        }
+
+        function audioupdateloop() {
+            window.requestAnimationFrame(audioupdateloop);
+            print_fft();
+        }
+
+    </script>
+</html>
