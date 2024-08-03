@@ -32,6 +32,11 @@
             }
         }
 
+        function touchend_handler(e)
+        {
+          document.exitFullscreen();
+        }
+
         canvas.addEventListener("fullscreenchange", function (e) {
                    if (document.fullscreenElement == null) {
                        canvas.width = 0;
@@ -39,6 +44,7 @@
                        audioElement.load();
                        playButton.dataset.playing = "false";
                        running = false;
+                       canvas.removeEventListener("touchend", touchend_handler);
                    }
                 });
 
@@ -87,6 +93,7 @@
         playButton.addEventListener(
             "click",
             () => {
+                canvas.addEventListener("touchend", touchend_handler);
                 if (playButton.dataset.playing === "false") {
                     audioElement.play();
                     playButton.dataset.playing = "true";
