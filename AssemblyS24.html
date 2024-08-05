@@ -45,7 +45,6 @@
                        playButton.dataset.playing = "false";
                        running = false;
                        canvas.removeEventListener("touchend", touchend_handler);
-                       glsl = new GlslCanvas(canvas);
                    }
                 });
 
@@ -99,7 +98,6 @@
                     playButton.dataset.playing = "true";
                     start_time = new Date().getTime();
                     if (!running) {
-                        glsl = new GlslCanvas(canvas);
                         glsl.setUniform("u_siika", "AsS24_resources/siika.png");
                         glsl.setUniform("u_credits", "AsS24_resources/credits.png");
                         scene = 0.0;
@@ -201,9 +199,7 @@
         }
 
         function audioupdateloop() {
-          if (running) {
-            window.requestAnimationFrame(audioupdateloop);
-          }
+          window.requestAnimationFrame(audioupdateloop);
           print_fft();
         }
 
