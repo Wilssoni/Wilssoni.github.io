@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Save Time to LocalStorage</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #timeDifference {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>Save Current Time</h1>
+  <button id="saveTimeButton">Save Current Time</button>
+  <p id="message"></p>
+  <p id="timeDifference">Time difference will appear here...</p>
+
+  <script>
+    const messageEl = document.getElementById('message');
+    const timeDiffEl = document.getElementById('timeDifference');
+
+    // Save the current time to localStorage when the button is clicked
+    document.getElementById('saveTimeButton').addEventListener('click', () => {
+      const currentTime = new Date().toISOString();
+      localStorage.setItem('savedTime', currentTime);
+      messageEl.innerText = `Time saved: ${currentTime}`;
+    });
+
+    // Update the time difference every second
+    setInterval(() => {
+      const savedTime = localStorage.getItem('savedTime');
+      if (savedTime) {
+        const currentTime = new Date();
+        const savedDate = new Date(savedTime);
+        const timeDiff = Math.abs(currentTime - savedDate); // Difference in milliseconds
+
+        // Convert time difference to a readable format
+        const seconds = Math.floor((timeDiff / 1000) % 60);
+        const minutes = Math.floor((timeDiff / (1000 * 60)) % 60);
+        const hours = Math.floor((timeDiff / (1000 * 60 * 60)) % 24);
+
+        timeDiffEl.innerText = `Time since saved: ${hours}h ${minutes}m ${seconds}s`;
+      } else {
+        timeDiffEl.innerText = 'No time saved yet.';
+      }
+    }, 1000);
+  </script>
+</body>
+</html>
