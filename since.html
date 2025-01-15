@@ -3,16 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Save Time to LocalStorage</title>
+  <title>Save Named Timestamps</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       margin-top: 50px;
     }
-    button {
-      padding: 10px 20px;
+    input, button {
+      margin: 10px;
+      padding: 10px;
       font-size: 16px;
+    }
+    input {
+      width: 300px;
+    }
+    button {
       cursor: pointer;
       background-color: #007BFF;
       color: white;
@@ -22,48 +28,117 @@
     button:hover {
       background-color: #0056b3;
     }
-    #timeDifference {
-      margin-top: 20px;
-      font-size: 18px;
-      color: #333;
+    #timestamps {
+      margin-top: 30px;
+      text-align: left;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .timestamp-row {
+      margin: 5px 0;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .timestamp-row span {
+      flex: 1;
+    }
+    .remove-button {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .remove-button:hover {
+      background-color: #b02a37;
     }
   </style>
 </head>
 <body>
-  <h1>Save Current Time</h1>
+  <h1>Save Named Timestamps</h1>
+  <input id="nameInput" type="text" placeholder="Enter a name for the timestamp">
   <button id="saveTimeButton">Save Current Time</button>
   <p id="message"></p>
-  <p id="timeDifference">Time difference will appear here...</p>
+
+  <div id="timestamps">
+    <h2>Saved Timestamps:</h2>
+    <div id="timestampList">No timestamps saved yet.</div>
+  </div>
 
   <script>
+    const nameInput = document.getElementById('nameInput');
     const messageEl = document.getElementById('message');
-    const timeDiffEl = document.getElementById('timeDifference');
+    const timestampList = document.getElementById('timestampList');
 
-    // Save the current time to localStorage when the button is clicked
+    // Save the current time to localStorage with the given name
     document.getElementById('saveTimeButton').addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        messageEl.innerText = 'Please enter a name for the timestamp.';
+        return;
+      }
       const currentTime = new Date().toISOString();
-      localStorage.setItem('savedTime', currentTime);
-      messageEl.innerText = `Time saved: ${currentTime}`;
+      localStorage.setItem(name, currentTime);
+      messageEl.innerText = `Time saved: ${name} - ${currentTime}`;
+      updateTimestampList();
     });
 
-    // Update the time difference every second
-    setInterval(() => {
-      const savedTime = localStorage.getItem('savedTime');
-      if (savedTime) {
-        const currentTime = new Date();
-        const savedDate = new Date(savedTime);
-        const timeDiff = Math.abs(currentTime - savedDate); // Difference in milliseconds
-
-        // Convert time difference to a readable format
-        const seconds = Math.floor((timeDiff / 1000) % 60);
-        const minutes = Math.floor((timeDiff / (1000 * 60)) % 60);
-        const hours = Math.floor((timeDiff / (1000 * 60 * 60)) % 24);
-
-        timeDiffEl.innerText = `Time since saved: ${hours}h ${minutes}m ${seconds}s`;
-      } else {
-        timeDiffEl.innerText = 'No time saved yet.';
+    // Update the list of timestamps on the page
+    function updateTimestampList() {
+      const keys = Object.keys(localStorage);
+      if (keys.length === 0) {
+        timestampList.innerHTML = 'No timestamps saved yet.';
+        return;
       }
-    }, 1000);
+
+      timestampList.innerHTML = '';
+      keys.forEach(key => {
+        const savedTime = localStorage.getItem(key);
+        const row = document.createElement('div');
+        row.className = 'timestamp-row';
+
+        const timeDiff = calculateTimeDifference(savedTime);
+
+        row.innerHTML = `
+          <span>${key}: ${savedTime} (${timeDiff})</span>
+          <button class="remove-button" onclick="removeTimestamp('${key}')">Remove</button>
+        `;
+        timestampList.appendChild(row);
+      });
+    }
+
+    // Calculate the time difference between now and a saved timestamp
+    function calculateTimeDifference(savedTime) {
+      const currentTime = new Date();
+      const savedDate = new Date(savedTime);
+      const timeDiff = Math.abs(currentTime - savedDate);
+
+      const seconds = Math.floor((timeDiff / 1000) % 60);
+      const minutes = Math.floor((timeDiff / (1000 * 60)) % 60);
+      const hours = Math.floor((timeDiff / (1000 * 60 * 60)) % 24);
+      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+      return `${days}d ${hours}h ${minutes}m ${seconds}s ago`;
+    }
+
+    // Remove a timestamp from localStorage and update the list
+    function removeTimestamp(key) {
+      localStorage.removeItem(key);
+      updateTimestampList();
+    }
+
+    // Update the list of timestamps every second
+    setInterval(updateTimestampList, 1000);
+
+    // Populate the timestamp list on page load
+    window.onload = updateTimestampList;
   </script>
 </body>
 </html>
