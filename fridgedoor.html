@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movable Paper</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .paper {
+            position: absolute;
+            width: auto;
+            height: auto;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            box-sizing: border-box;
+            cursor: move;
+            overflow: hidden;
+        }
+
+        .paper textarea {
+            width: 20ch;
+            height: 1.2em;
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 16px;
+            font-family: inherit;
+            background: transparent;
+        }
+
+        .add-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .add-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <button class="add-button" id="addButton">Add New Paper</button>
+
+    <script>
+        let paperIdCounter = 1; // Counter to assign unique IDs
+
+        function saveToLocalStorage(id, data) {
+            localStorage.setItem(id, JSON.stringify(data));
+        }
+
+        function loadFromLocalStorage(id) {
+            return JSON.parse(localStorage.getItem(id));
+        }
+
+        function createPaper(id, position = { x: 100, y: 100 }, text = '') {
+            const newPaper = document.createElement('div');
+            newPaper.className = 'paper';
+            newPaper.style.left = `${position.x}px`;
+            newPaper.style.top = `${position.y}px`;
+            newPaper.setAttribute('data-id', id);
+
+            const textarea = document.createElement('textarea');
+            textarea.placeholder = 'Write something...';
+            textarea.value = text;
+
+            newPaper.appendChild(textarea);
+            document.body.appendChild(newPaper);
+
+            // Save content and position to localStorage
+            textarea.addEventListener('input', () => {
+                saveToLocalStorage(id, {
+                    id,
+                    position: {
+                        x: parseInt(newPaper.style.left, 10),
+                        y: parseInt(newPaper.style.top, 10),
+                    },
+                    text: textarea.value,
+                });
+            });
+
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            newPaper.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.clientX - newPaper.getBoundingClientRect().left;
+                offsetY = e.clientY - newPaper.getBoundingClientRect().top;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const x = e.clientX - offsetX;
+                    const y = e.clientY - offsetY;
+                    newPaper.style.left = `${x}px`;
+                    newPaper.style.top = `${y}px`;
+
+                    saveToLocalStorage(id, {
+                        id,
+                        position: { x, y },
+                        text: textarea.value,
+                    });
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            return newPaper;
+        }
+
+        // Initialize existing papers from localStorage
+        Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith('paper-')) {
+                const data = loadFromLocalStorage(key);
+                createPaper(data.id, data.position, data.text);
+            }
+        });
+
+        // Add new paper functionality
+        document.getElementById('addButton').addEventListener('click', () => {
+            let id;
+            do {
+                id = `paper-${paperIdCounter++}`;
+            } while (localStorage.getItem(id));
+
+            createPaper(id);
+        });
+    </script>
+</body>
+</html>
