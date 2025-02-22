@@ -3,73 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Save Named Timestamps</title>
+  <title>Cyberpunk Timestamp Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Orbitron', sans-serif;
+      color: #00ffff;
+      background-color: #0a0a0a;
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    .glass {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(15px);
+      border-radius: 15px;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      padding: 20px;
       text-align: center;
-      margin-top: 50px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
     }
-    input, button {
-      margin: 10px;
-      padding: 10px;
-      font-size: 16px;
+    .neon-button {
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      box-shadow: 0 0 10px #00ffff;
+      transition: all 0.3s ease-in-out;
     }
-    input {
-      width: 300px;
-    }
-    button {
-      cursor: pointer;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    #timestamps {
-      margin-top: 30px;
-      text-align: left;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .timestamp-row {
-      margin: 5px 0;
-      padding: 10px;
-      background-color: #f8f9fa;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .timestamp-row span {
-      flex: 1;
-    }
-    .remove-button {
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .remove-button:hover {
-      background-color: #b02a37;
+    .neon-button:hover {
+      box-shadow: 0 0 20px #ff00ff;
+      transform: scale(1.1);
     }
   </style>
 </head>
 <body>
-  <h1>Save Named Timestamps</h1>
-  <input id="nameInput" type="text" placeholder="Enter a name for the timestamp">
-  <button id="saveTimeButton">Save Current Time</button>
-  <p id="message"></p>
 
-  <div id="timestamps">
-    <h2>Saved Timestamps:</h2>
-    <div id="timestampList">No timestamps saved yet.</div>
+  <canvas id="bg"></canvas>
+
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="glass text-cyan-300 p-8 shadow-xl w-full max-w-lg">
+      <h1 class="text-3xl font-bold text-cyan-300">Cyberpunk Timestamp Tracker</h1>
+      <div class="mt-6 flex gap-3">
+        <input id="nameInput" type="text" placeholder="Enter a name"
+          class="flex-1 p-3 rounded-lg bg-black text-cyan-300 border border-cyan-300 outline-none focus:ring-2 focus:ring-cyan-400">
+        <button id="saveTimeButton"
+          class="neon-button text-black font-semibold px-5 py-3 rounded-lg">Save</button>
+      </div>
+      <p id="message" class="mt-2 text-pink-400"></p>
+
+      <div id="timestamps" class="mt-6">
+        <h2 class="text-xl text-cyan-400 font-semibold">Saved Timestamps:</h2>
+        <div id="timestampList" class="mt-3 space-y-2">
+          <p class="text-gray-500">No timestamps saved yet.</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -77,7 +69,6 @@
     const messageEl = document.getElementById('message');
     const timestampList = document.getElementById('timestampList');
 
-    // Save the current time to localStorage with the given name
     document.getElementById('saveTimeButton').addEventListener('click', () => {
       const name = nameInput.value.trim();
       if (!name) {
@@ -86,35 +77,37 @@
       }
       const currentTime = new Date().toISOString();
       localStorage.setItem(name, currentTime);
-      messageEl.innerText = `Time saved: ${name} - ${currentTime}`;
+      messageEl.innerText = `Time saved: ${name}`;
+      nameInput.value = '';
       updateTimestampList();
     });
 
-    // Update the list of timestamps on the page
     function updateTimestampList() {
       const keys = Object.keys(localStorage);
       if (keys.length === 0) {
-        timestampList.innerHTML = 'No timestamps saved yet.';
+        timestampList.innerHTML = '<p class="text-gray-500">No timestamps saved yet.</p>';
         return;
       }
 
       timestampList.innerHTML = '';
       keys.forEach(key => {
         const savedTime = localStorage.getItem(key);
-        const row = document.createElement('div');
-        row.className = 'timestamp-row';
-
         const timeDiff = calculateTimeDifference(savedTime);
 
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between p-3 bg-black border border-cyan-400 rounded-lg shadow-lg transition hover:scale-105";
+
         row.innerHTML = `
-          <span>${key}: ${savedTime} (${timeDiff})</span>
-          <button class="remove-button" onclick="removeTimestamp('${key}')">Remove</button>
+          <span class="text-cyan-300 font-medium">${key}: ${savedTime} <br>
+            <span class="text-sm text-pink-400">${timeDiff} ago</span>
+          </span>
+          <button onclick="removeTimestamp('${key}')"
+            class="neon-button text-black px-3 py-1 rounded-lg">Remove</button>
         `;
         timestampList.appendChild(row);
       });
     }
 
-    // Calculate the time difference between now and a saved timestamp
     function calculateTimeDifference(savedTime) {
       const currentTime = new Date();
       const savedDate = new Date(savedTime);
@@ -125,20 +118,56 @@
       const hours = Math.floor((timeDiff / (1000 * 60 * 60)) % 24);
       const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
 
-      return `${days}d ${hours}h ${minutes}m ${seconds}s ago`;
+      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
     }
 
-    // Remove a timestamp from localStorage and update the list
     function removeTimestamp(key) {
       localStorage.removeItem(key);
       updateTimestampList();
     }
 
-    // Update the list of timestamps every second
     setInterval(updateTimestampList, 1000);
-
-    // Populate the timestamp list on page load
     window.onload = updateTimestampList;
+
+    // ==== WebGL Background ====
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("bg"), alpha: true });
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const particles = new THREE.BufferGeometry();
+    const positions = new Float32Array(1000 * 3);
+
+    for (let i = 0; i < 1000; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 15;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 15;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 15;
+    }
+
+    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({ color: 0x00ffff, size: 0.1 });
+    const particleSystem = new THREE.Points(particles, particleMaterial);
+    scene.add(particleSystem);
+
+    camera.position.z = 5;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      particleSystem.rotation.y += 0.002;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
   </script>
+
 </body>
 </html>
