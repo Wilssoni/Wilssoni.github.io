@@ -4,70 +4,106 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cyberpunk Timestamp Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
+    /* Global styles */
     body {
       margin: 0;
       overflow: hidden;
-      font-family: 'Orbitron', sans-serif;
+      font-family: 'Arial', sans-serif;
       color: #00ffff;
       background-color: #0a0a0a;
     }
+    /* WebGL Canvas */
     canvas {
       position: fixed;
       top: 0;
       left: 0;
+      width: 100vw;
+      height: 100vh;
       z-index: -1;
     }
-    .glass {
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(15px);
-      border-radius: 15px;
-      border: 1px solid rgba(0, 255, 255, 0.3);
+    /* Cyberpunk UI */
+    .container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
       padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #00ffff;
+      box-shadow: 0 0 15px #00ffff;
       text-align: center;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+      width: 90%;
+      max-width: 400px;
     }
-    .neon-button {
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+      border: none;
+      outline: none;
+    }
+    input {
+      background: black;
+      color: #00ffff;
+      border: 1px solid #00ffff;
+    }
+    button {
       background: linear-gradient(45deg, #00ffff, #ff00ff);
-      box-shadow: 0 0 10px #00ffff;
-      transition: all 0.3s ease-in-out;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
     }
-    .neon-button:hover {
-      box-shadow: 0 0 20px #ff00ff;
-      transform: scale(1.1);
+    button:hover {
+      box-shadow: 0 0 15px #ff00ff;
+      transform: scale(1.05);
+    }
+    .timestamp-list {
+      margin-top: 15px;
+      text-align: left;
+    }
+    .timestamp-item {
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #00ffff;
+      border-radius: 5px;
+      margin-top: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .delete-button {
+      background: red;
+      color: white;
+      padding: 5px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
     }
   </style>
 </head>
 <body>
 
-  <canvas id="bg"></canvas>
+  <canvas id="webglCanvas"></canvas>
 
-  <div class="flex items-center justify-center min-h-screen">
-    <div class="glass text-cyan-300 p-8 shadow-xl w-full max-w-lg">
-      <h1 class="text-3xl font-bold text-cyan-300">Cyberpunk Timestamp Tracker</h1>
-      <div class="mt-6 flex gap-3">
-        <input id="nameInput" type="text" placeholder="Enter a name"
-          class="flex-1 p-3 rounded-lg bg-black text-cyan-300 border border-cyan-300 outline-none focus:ring-2 focus:ring-cyan-400">
-        <button id="saveTimeButton"
-          class="neon-button text-black font-semibold px-5 py-3 rounded-lg">Save</button>
-      </div>
-      <p id="message" class="mt-2 text-pink-400"></p>
-
-      <div id="timestamps" class="mt-6">
-        <h2 class="text-xl text-cyan-400 font-semibold">Saved Timestamps:</h2>
-        <div id="timestampList" class="mt-3 space-y-2">
-          <p class="text-gray-500">No timestamps saved yet.</p>
-        </div>
-      </div>
+  <div class="container">
+    <h2>Cyberpunk Timestamp Tracker</h2>
+    <input id="nameInput" type="text" placeholder="Enter name for timestamp">
+    <button id="saveTimeButton">Save Timestamp</button>
+    <p id="message"></p>
+    <div id="timestamps" class="timestamp-list">
+      <p>No timestamps saved yet.</p>
     </div>
   </div>
 
   <script>
+    const sitePrefix = "cyber_timestamps_";
     const nameInput = document.getElementById('nameInput');
     const messageEl = document.getElementById('message');
-    const timestampList = document.getElementById('timestampList');
+    const timestampList = document.getElementById('timestamps');
 
     document.getElementById('saveTimeButton').addEventListener('click', () => {
       const name = nameInput.value.trim();
@@ -76,33 +112,27 @@
         return;
       }
       const currentTime = new Date().toISOString();
-      localStorage.setItem(name, currentTime);
-      messageEl.innerText = `Time saved: ${name}`;
+      const data = JSON.stringify({ name, timestamp: currentTime });
+
+      localStorage.setItem(sitePrefix + name, data);
+      messageEl.innerText = `Saved: ${name}`;
       nameInput.value = '';
       updateTimestampList();
     });
 
     function updateTimestampList() {
-      const keys = Object.keys(localStorage);
-      if (keys.length === 0) {
-        timestampList.innerHTML = '<p class="text-gray-500">No timestamps saved yet.</p>';
-        return;
-      }
+      const keys = Object.keys(localStorage).filter(key => key.startsWith(sitePrefix));
+      timestampList.innerHTML = keys.length === 0 ? '<p>No timestamps saved yet.</p>' : '';
 
-      timestampList.innerHTML = '';
       keys.forEach(key => {
-        const savedTime = localStorage.getItem(key);
-        const timeDiff = calculateTimeDifference(savedTime);
+        const { name, timestamp } = JSON.parse(localStorage.getItem(key));
+        const timeDiff = calculateTimeDifference(timestamp);
 
         const row = document.createElement('div');
-        row.className = "flex items-center justify-between p-3 bg-black border border-cyan-400 rounded-lg shadow-lg transition hover:scale-105";
-
+        row.className = "timestamp-item";
         row.innerHTML = `
-          <span class="text-cyan-300 font-medium">${key}: ${savedTime} <br>
-            <span class="text-sm text-pink-400">${timeDiff} ago</span>
-          </span>
-          <button onclick="removeTimestamp('${key}')"
-            class="neon-button text-black px-3 py-1 rounded-lg">Remove</button>
+          <span>${name}: ${timeDiff} ago</span>
+          <button class="delete-button" onclick="removeTimestamp('${key}')">X</button>
         `;
         timestampList.appendChild(row);
       });
@@ -111,12 +141,12 @@
     function calculateTimeDifference(savedTime) {
       const currentTime = new Date();
       const savedDate = new Date(savedTime);
-      const timeDiff = Math.abs(currentTime - savedDate);
+      const diff = Math.abs(currentTime - savedDate);
 
-      const seconds = Math.floor((timeDiff / 1000) % 60);
-      const minutes = Math.floor((timeDiff / (1000 * 60)) % 60);
-      const hours = Math.floor((timeDiff / (1000 * 60 * 60)) % 24);
-      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+      const seconds = Math.floor((diff / 1000) % 60);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
       return `${days}d ${hours}h ${minutes}m ${seconds}s`;
     }
@@ -129,44 +159,73 @@
     setInterval(updateTimestampList, 1000);
     window.onload = updateTimestampList;
 
-    // ==== WebGL Background ====
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("bg"), alpha: true });
+    // ==== Custom WebGL Background ====
+    const canvas = document.getElementById('webglCanvas');
+    const gl = canvas.getContext('webgl');
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    const vertexShaderSource = `
+      attribute vec4 position;
+      void main() {
+          gl_Position = position;
+      }
+    `;
 
-    const particles = new THREE.BufferGeometry();
-    const positions = new Float32Array(1000 * 3);
+    const fragmentShaderSource = `
+      precision mediump float;
+      uniform float time;
+      uniform vec2 resolution;
 
-    for (let i = 0; i < 1000; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 15;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 15;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 15;
+      void main() {
+          vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
+          uv *= 5.0;
+
+          float angle = time * 0.5;
+          mat2 rotation = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+          uv = rotation * uv;
+
+          float cubeSize = 0.2;
+          vec2 grid = mod(uv, vec2(cubeSize)) - vec2(cubeSize / 2.0);
+          float d = length(grid) * 10.0;
+          float glow = smoothstep(0.1, 0.0, d);
+
+          vec3 color = vec3(0.0, 0.8, 1.0) * glow;
+          gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vertexShader, vertexShaderSource);
+    gl.compileShader(vertexShader);
+
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fragmentShader, fragmentShaderSource);
+    gl.compileShader(fragmentShader);
+
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+    const positionLocation = gl.getAttribLocation(program, 'position');
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const timeLocation = gl.getUniformLocation(program, 'time');
+    const resolutionLocation = gl.getUniformLocation(program, 'resolution');
+
+    function render(time) {
+      gl.uniform1f(timeLocation, time * 0.001);
+      gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      requestAnimationFrame(render);
     }
-
-    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    const particleMaterial = new THREE.PointsMaterial({ color: 0x00ffff, size: 0.1 });
-    const particleSystem = new THREE.Points(particles, particleMaterial);
-    scene.add(particleSystem);
-
-    camera.position.z = 5;
-
-    function animate() {
-      requestAnimationFrame(animate);
-      particleSystem.rotation.y += 0.002;
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener("resize", () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
+    requestAnimationFrame(render);
   </script>
 
 </body>
