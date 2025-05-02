@@ -6,6 +6,12 @@ body {
   height: 100%;
   background-color: black;
   color: white;
+  font-family: 'Courier New', monospace;
+}
+
+a {
+  color: white;
+  text-decoration: none;
 }
 
 @keyframes greenpulse {
