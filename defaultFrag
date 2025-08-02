@@ -1,0 +1,89 @@
+#version 300 es
+precision highp float;
+uniform vec2 v; // resolution
+uniform float f; // time
+out vec4 m;
+
+float sdOctahedron( vec3 p, float s)
+{
+    p = abs(p);
+    return (p.x+p.y+p.z-s)*0.57735027;
+}
+
+mat2 rot2D(float angle)
+{
+    float s = sin(angle);
+    float c = cos(angle);
+    return mat2(c, -s, s, c);
+}
+
+vec3 skyPalette(float t)
+{
+    vec3 a = vec3(0.9, 0.3, 0.7);
+    vec3 b = vec3(0.6, 0.4, 0.3);
+    vec3 c = vec3(0.3, 0.3, 0.2);
+    vec3 d = vec3(2.5, 2.4, 0.1);
+
+    return a + b * cos(6.28318 * (c * t * d));
+}
+
+vec4 getdist(vec3 p, float t, float iter)
+{
+    vec3 q = mod(p,1.);
+    vec3 shipPos = vec3(.5,.5,1.);
+    vec3 g =  q - shipPos;
+    g.xz *= rot2D(f);
+    vec3 c = vec3(1./iter);
+    float ship = sdOctahedron(g, .25);
+
+    return vec4(c, ship);
+}
+
+vec3 lighting(vec3 base)
+{
+    float m =sin(1000.*f);
+    return vec3(max(m,base.x), max(m, base.y), max(m, base.z));
+}
+
+void main()
+{
+    vec2 uv = (gl_FragCoord.xy*2. - v.xy) / v.y;
+    vec3 ro = vec3(0., 0., 50.0);
+    ro.y += sin(0.3*f);
+    ro.x += cos(0.3*f);
+    vec3 rd = normalize(vec3(uv, 1.));
+    ro.z += 1.5*f;
+    rd.xz *= rot2D(sin(f*0.5)*0.2);
+    float t = 0.0;
+    vec3 col = vec3(0);
+
+    /* march */
+    for (float i = 0.0; i < 2000.0; i++) {
+        vec3 p = ro + rd * t;
+
+        vec4 d = getdist(p, t, i);
+
+        t += d.w;
+        col = d.rgb;
+        if (d.w < 0.001 || t > 100.0) break;
+    }
+
+    vec3 col1 = skyPalette(t)*clamp(max(f-16., 0.), 0.,0.4);
+    col = mix(col, col1, 0.1)*(1./t);
+    // lightning
+    if ((f > 32.&& f < 32.25)
+         ||(f > 34.&& f < 34.25)
+         ||(f > 36.&& f < 36.25)
+         ||(f > 38.&& f < 38.25)
+         ||(f > 40.&& f < 40.25)
+         ||(f > 42.&& f < 42.25)
+         ||(f > 44.&& f < 44.25)
+         ||(f > 46.&& f < 46.25)
+         ||(f > 48.&& f < 48.25)
+         ||(f > 50.&& f < 50.25)
+    ){
+        col = lighting(col);
+    }
+    //gamma correction
+    m = vec4(pow(col*min(t*0.1,1.), vec3(1./2.2)), 1.);
+}

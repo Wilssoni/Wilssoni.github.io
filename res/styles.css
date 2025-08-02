@@ -59,3 +59,30 @@ h2 {
 .qrwasm-body {
   padding: 10px 30px;
 }
+
+.footer {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+#reloadButton {
+    height: 30px;
+    align-self: center;
+}
+
+#shaderToyContainer {
+    display: flex;
+}
+
+canvas {
+    width: 600px;
+    height: 200px;
+}
+
+textarea {
+    width: 600px;
+    height: 200px;
+    color: white;
+    background-color: black;
+}

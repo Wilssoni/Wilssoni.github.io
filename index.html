@@ -7,6 +7,7 @@
   <meta name="description" content="Wilssoni's GitRepoPage">
   <meta name="author" content="Vili" >
   <link rel="stylesheet" type="text/css" href="res/styles.css">
+  <script type="text/javascript" src="background.js"></script>
 </head>
 <body>
 <div class="content-container">
@@ -20,7 +21,16 @@
   <h3><a href="/tapahtumahorisontti2.html">Assembly Summer 2025 entry to 4k-intro</a></h3>
 </div>
 <div class="footer">
-THIS IS A FOOTER
+<h2>ShaderToyThingy</h2>
+<div id="shaderToyContainer">
+    <canvas></canvas>
+    <button id="reloadButton" onclick="reloadShader()">ReloadShader</button>
+    <textarea id="fragmentshadertext"></textarea>
+    <div>
+        <p>uniform f is a float time in seconds since page load</p>
+        <p>uniform v is the canvas resolution</p>
+    </div>
+</div>
 </div>
 </div>
 </body>
