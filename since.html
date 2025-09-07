@@ -179,7 +179,7 @@
           vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
           uv *= 5.0;
 
-          float angle = time * 0.5;
+          float angle = time;
           mat2 rotation = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
           uv = rotation * uv;
 
