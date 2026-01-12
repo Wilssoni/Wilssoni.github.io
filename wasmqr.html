@@ -16,15 +16,13 @@
 </div>
 <div class="content-body">
 <div class="qrwasm-body">
-  <h3>Test qr-wasm yourself! Upload a image with qr-code and see the magic happen!</h3>
-  <h4>Upload an image</h4>
-  <input type="file" id="qr_file">
-  <h4>or</h4>
-  <h4>Scan with a camera</h4>
-  <canvas hidden height="300" width="300" id="qr_canvas"></canvas>
-  <span>Click/touch video feed to scan for QR</span><br>
-  <video width="300" height="300" id="video" autoplay playsinline></video><br>
+  <h3>Scan with a camera</h3>
+  <canvas hidden width="900" height="900" id="qr_canvas"></canvas>
+  <video id="video" autoplay playsinline></video><br>
   <br>
+  <h4>or</h4>
+  <h3>Upload an image</h3>
+  <input type="file" id="qr_file">
   <p>Link to repo: <a href="https://github.com/Wilssoni/qr-wasm">qr-wasm</a>
 </div>
 </div>
@@ -48,6 +46,7 @@ THIS IS A FOOTER
   function initialize() {
     init().then((instance) => {
       loaded = true;
+      startScan();
     });
   }
   var video = document.getElementById('video');
@@ -67,7 +66,6 @@ THIS IS A FOOTER
   {
     console.log(qrstring);
     alert(qrstring);
-    stopScan();
   }
 
   function redrawcanvas()
@@ -89,12 +87,10 @@ THIS IS A FOOTER
           stopScan();
           loaded = false;
           initialize();
-          startScan();
         } else if (e == "RuntimeError: unreachable executed") {
           stopScan();
           loaded = false;
           initialize();
-          startScan();
         }
       }
     }
@@ -105,7 +101,6 @@ THIS IS A FOOTER
     intervalId = setInterval(redrawcanvas, 100);
   }
   initialize();
-  document.getElementById('video').addEventListener("click", startScan);
 
   file.onchange = function() {
     img.src = URL.createObjectURL(this.files[0]);
@@ -117,7 +112,7 @@ THIS IS A FOOTER
     var imageBytes = context.getImageData(0, 0, canvas.width, canvas.height).data;
     var qrstring = read_qr(imageBytes, canvas.width, canvas.height);
     if (qrstring != "") {
-      alert(qrstring);  
+      alert(qrstring);
     }
   };
 </script>

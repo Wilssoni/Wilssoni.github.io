@@ -39,7 +39,6 @@ h2 {
 }
 
 .content-container {
-  height: 100%;
   display: flex;
   flex-direction: column;
 }
