@@ -112,7 +112,7 @@ THIS IS A FOOTER
     var imageBytes = context.getImageData(0, 0, canvas.width, canvas.height).data;
     var qrstring = read_qr(imageBytes, canvas.width, canvas.height);
     if (qrstring != "") {
-      alert(qrstring);
+      foundHandle(qrstring);
     }
   };
 </script>
