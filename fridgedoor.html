@@ -1,152 +1,278 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movable Paper</title>
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Movable Paper</title>
+        <style>
+            body {
+                margin: 0;
+                height: 100vh;
+                overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: #f0f0f0;
+                font-family: Arial, sans-serif;
+            }
 
-        .paper {
-            position: absolute;
-            width: auto;
-            height: auto;
-            background-color: white;
-            border: 1px solid #ccc;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 10px;
-            box-sizing: border-box;
-            cursor: move;
-            overflow: hidden;
-        }
+            .paper {
+                position: absolute;
+                min-width: 160px;
+                min-height: 50px;
+                background-color: white;
+                border: 1px solid #ccc;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                padding: 10px 10px 18px 10px; /* extra bottom space for resize handle */
+                box-sizing: border-box;
+                cursor: move;
+                overflow: hidden;
+                touch-action: none; /* Prevent default scrolling while dragging */
+            }
 
-        .paper textarea {
-            width: 20ch;
-            height: 1.2em;
-            border: none;
-            outline: none;
-            resize: none;
-            font-size: 16px;
-            font-family: inherit;
-            background: transparent;
-        }
+            .paper textarea {
+                width: 100%;
+                height: 1.2em;
+                border: none;
+                outline: none;
+                resize: none;
+                font-size: 16px;
+                font-family: inherit;
+                background: transparent;
+            }
 
-        .add-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
+            .resize-handle {
+                position: absolute;
+                width: 14px;
+                height: 14px;
+                right: 2px;
+                bottom: 2px;
+                background: #ccc;
+                cursor: se-resize;
+                border-radius: 3px;
+            }
 
-        .add-button:hover {
-            background-color: #0056b3;
-        }
-    </style>
-</head>
-<body>
-    <button class="add-button" id="addButton">Add New Paper</button>
+            .add-button {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
 
-    <script>
-        let paperIdCounter = 1; // Counter to assign unique IDs
+            .add-button:hover {
+                background-color: #0056b3;
+            }
+        </style>
+    </head>
+    <body>
+        <button class="add-button" id="addButton">Add New Paper</button>
 
-        function saveToLocalStorage(id, data) {
-            localStorage.setItem(id, JSON.stringify(data));
-        }
+        <script>
+            let paperIdCounter = 1; // Counter to assign unique IDs
 
-        function loadFromLocalStorage(id) {
-            return JSON.parse(localStorage.getItem(id));
-        }
+            function saveToLocalStorage(id, data) {
+                localStorage.setItem(id, JSON.stringify(data));
+            }
 
-        function createPaper(id, position = { x: 100, y: 100 }, text = '') {
-            const newPaper = document.createElement('div');
-            newPaper.className = 'paper';
-            newPaper.style.left = `${position.x}px`;
-            newPaper.style.top = `${position.y}px`;
-            newPaper.setAttribute('data-id', id);
+            function loadFromLocalStorage(id) {
+                return JSON.parse(localStorage.getItem(id));
+            }
 
-            const textarea = document.createElement('textarea');
-            textarea.placeholder = 'Write something...';
-            textarea.value = text;
+            function createPaper(
+                id,
+                position = { x: 100, y: 100 },
+                text = "",
+                size = { w: 200, h: 60 },
+            ) {
+                const newPaper = document.createElement("div");
+                newPaper.className = "paper";
+                newPaper.style.left = `${position.x}px`;
+                newPaper.style.top = `${position.y}px`;
+                newPaper.style.width = `${size.w}px`;
+                newPaper.style.height = `${size.h}px`;
+                newPaper.setAttribute("data-id", id);
 
-            newPaper.appendChild(textarea);
-            document.body.appendChild(newPaper);
+                const textarea = document.createElement("textarea");
+                textarea.placeholder = "Write something...";
+                textarea.value = text;
 
-            // Save content and position to localStorage
-            textarea.addEventListener('input', () => {
-                saveToLocalStorage(id, {
-                    id,
-                    position: {
-                        x: parseInt(newPaper.style.left, 10),
-                        y: parseInt(newPaper.style.top, 10),
-                    },
-                    text: textarea.value,
-                });
-            });
+                const resizeHandle = document.createElement("div");
+                resizeHandle.className = "resize-handle";
 
-            let isDragging = false;
-            let offsetX, offsetY;
+                newPaper.appendChild(textarea);
+                newPaper.appendChild(resizeHandle);
+                document.body.appendChild(newPaper);
 
-            newPaper.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                offsetX = e.clientX - newPaper.getBoundingClientRect().left;
-                offsetY = e.clientY - newPaper.getBoundingClientRect().top;
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    const x = e.clientX - offsetX;
-                    const y = e.clientY - offsetY;
-                    newPaper.style.left = `${x}px`;
-                    newPaper.style.top = `${y}px`;
-
+                function saveState() {
                     saveToLocalStorage(id, {
                         id,
-                        position: { x, y },
+                        position: {
+                            x: parseInt(newPaper.style.left, 10),
+                            y: parseInt(newPaper.style.top, 10),
+                        },
+                        size: {
+                            w: newPaper.offsetWidth,
+                            h: newPaper.offsetHeight,
+                        },
                         text: textarea.value,
                     });
                 }
-            });
 
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
+                // Save text changes
+                textarea.addEventListener("input", saveState);
 
-            return newPaper;
-        }
+                // Drag logic (mouse + touch)
+                let isDragging = false;
+                let offsetX = 0,
+                    offsetY = 0;
 
-        // Initialize existing papers from localStorage
-        Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith('paper-')) {
-                const data = loadFromLocalStorage(key);
-                createPaper(data.id, data.position, data.text);
+                function startDrag(clientX, clientY) {
+                    isDragging = true;
+                    const rect = newPaper.getBoundingClientRect();
+                    offsetX = clientX - rect.left;
+                    offsetY = clientY - rect.top;
+                }
+
+                function moveDrag(clientX, clientY) {
+                    if (!isDragging) return;
+
+                    const x = clientX - offsetX;
+                    const y = clientY - offsetY;
+                    newPaper.style.left = `${x}px`;
+                    newPaper.style.top = `${y}px`;
+
+                    saveState();
+                }
+
+                function endDrag() {
+                    isDragging = false;
+                }
+
+                newPaper.addEventListener("mousedown", (e) => {
+                    if (e.target === resizeHandle) return;
+                    startDrag(e.clientX, e.clientY);
+                });
+
+                document.addEventListener("mousemove", (e) =>
+                    moveDrag(e.clientX, e.clientY),
+                );
+                document.addEventListener("mouseup", endDrag);
+
+                newPaper.addEventListener(
+                    "touchstart",
+                    (e) => {
+                        if (e.target === resizeHandle) return;
+                        const touch = e.touches[0];
+                        startDrag(touch.clientX, touch.clientY);
+                        e.preventDefault();
+                    },
+                    { passive: false },
+                );
+
+                document.addEventListener(
+                    "touchmove",
+                    (e) => {
+                        if (!isDragging) return;
+                        const touch = e.touches[0];
+                        moveDrag(touch.clientX, touch.clientY);
+                        e.preventDefault();
+                    },
+                    { passive: false },
+                );
+
+                document.addEventListener("touchend", endDrag);
+
+                // Resize logic (mouse + touch)
+                let isResizing = false;
+                let startW, startH, startX, startY;
+
+                function startResize(clientX, clientY) {
+                    isResizing = true;
+                    startW = newPaper.offsetWidth;
+                    startH = newPaper.offsetHeight;
+                    startX = clientX;
+                    startY = clientY;
+                }
+
+                function moveResize(clientX, clientY) {
+                    if (!isResizing) return;
+
+                    const newW = Math.max(160, startW + (clientX - startX));
+                    const newH = Math.max(50, startH + (clientY - startY));
+
+                    newPaper.style.width = `${newW}px`;
+                    newPaper.style.height = `${newH}px`;
+
+                    saveState();
+                }
+
+                function endResize() {
+                    isResizing = false;
+                }
+
+                resizeHandle.addEventListener("mousedown", (e) => {
+                    startResize(e.clientX, e.clientY);
+                    e.stopPropagation();
+                });
+
+                document.addEventListener("mousemove", (e) =>
+                    moveResize(e.clientX, e.clientY),
+                );
+                document.addEventListener("mouseup", endResize);
+
+                resizeHandle.addEventListener(
+                    "touchstart",
+                    (e) => {
+                        const touch = e.touches[0];
+                        startResize(touch.clientX, touch.clientY);
+                        e.stopPropagation();
+                        e.preventDefault();
+                    },
+                    { passive: false },
+                );
+
+                document.addEventListener(
+                    "touchmove",
+                    (e) => {
+                        if (!isResizing) return;
+                        const touch = e.touches[0];
+                        moveResize(touch.clientX, touch.clientY);
+                        e.preventDefault();
+                    },
+                    { passive: false },
+                );
+
+                document.addEventListener("touchend", endResize);
+
+                return newPaper;
             }
-        });
 
-        // Add new paper functionality
-        document.getElementById('addButton').addEventListener('click', () => {
-            let id;
-            do {
-                id = `paper-${paperIdCounter++}`;
-            } while (localStorage.getItem(id));
+            // Initialize existing papers from localStorage
+            Object.keys(localStorage).forEach((key) => {
+                if (key.startsWith("paper-")) {
+                    const data = loadFromLocalStorage(key);
+                    createPaper(data.id, data.position, data.text, data.size);
+                }
+            });
 
-            createPaper(id);
-        });
-    </script>
-</body>
+            // Add new paper functionality (validate ID only on button press)
+            document
+                .getElementById("addButton")
+                .addEventListener("click", () => {
+                    let id;
+                    do {
+                        id = `paper-${paperIdCounter++}`;
+                    } while (localStorage.getItem(id));
+
+                    createPaper(id);
+                });
+        </script>
+    </body>
 </html>
