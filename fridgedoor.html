@@ -1,364 +1,336 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Movable Paper</title>
-        <style>
-            body {
-                margin: 0;
-                height: 100vh;
-                overflow: hidden;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                background-color: #f0f0f0;
-                font-family: Arial, sans-serif;
-            }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movable Paper</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
 
-            .paper {
-                position: absolute;
-                min-width: 160px;
-                min-height: 50px;
-                background-color: white;
-                border: 1px solid #ccc;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                padding: 10px 10px 18px 10px; /* extra bottom space for resize handle */
-                box-sizing: border-box;
-                cursor: move;
-                overflow: hidden;
-                touch-action: none; /* Prevent default scrolling while dragging */
-            }
+        .paper {
+            position: absolute;
+            min-width: 160px;
+            min-height: 50px;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 10px 10px 18px 10px;
+            box-sizing: border-box;
+            cursor: move;
+            overflow: hidden;
+            touch-action: none;
+        }
 
-            .paper textarea {
-                width: 100%;
-                height: 1.2em;
-                border: none;
-                outline: none;
-                resize: none;
-                font-size: 16px;
-                font-family: inherit;
-                background: transparent;
-            }
+        .paper.selected {
+            border: 2px solid #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+        }
 
-            .resize-handle {
-                position: absolute;
-                width: 14px;
-                height: 14px;
-                right: 2px;
-                bottom: 2px;
-                background: #ccc;
-                cursor: se-resize;
-                border-radius: 3px;
-            }
+        .paper textarea {
+            width: 100%;
+            height: 1.2em;
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 16px;
+            font-family: inherit;
+            background: transparent;
+        }
 
-            .delete-button {
-                position: absolute;
-                top: -10px;
-                right: -10px;
-                width: 22px;
-                height: 22px;
-                border-radius: 50%;
-                border: none;
-                background: #ff4d4d;
-                color: white;
-                font-weight: bold;
-                cursor: pointer;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10;
-            }
+        .resize-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            right: 2px;
+            bottom: 2px;
+            background: #ccc;
+            cursor: se-resize;
+            border-radius: 3px;
+        }
 
-            .delete-button:hover {
-                background: #cc0000;
-            }
+        .delete-button {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: none;
+            background: #ff4d4d;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
 
-            .add-button {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                padding: 10px 20px;
-                background-color: #007bff;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 16px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            }
+        .delete-button:hover {
+            background: #cc0000;
+        }
 
-            .add-button:hover {
-                background-color: #0056b3;
-            }
+        .add-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
 
-            .clear-button {
-                position: fixed;
-                bottom: 20px;
-                left: 20px;
-                padding: 10px 20px;
-                background-color: #dc3545;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 16px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            }
+        .clear-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <button class="add-button" id="addButton">Add New Paper</button>
+    <button class="clear-button" id="clearButton">Clear All</button>
 
-            .clear-button:hover {
-                background-color: #b52a37;
-            }
-        </style>
-    </head>
-    <body>
-        <button class="add-button" id="addButton">Add New Paper</button>
-        <button class="clear-button" id="clearButton">Clear All</button>
+    <script>
+        let paperIdCounter = 1;
+        let selectedPaper = null;
 
-        <script>
-            let paperIdCounter = 1; // Counter to assign unique IDs
+        function selectPaper(paper) {
+            if (selectedPaper) selectedPaper.classList.remove('selected');
+            selectedPaper = paper;
+            if (paper) paper.classList.add('selected');
+        }
 
-            function saveToLocalStorage(id, data) {
-                localStorage.setItem(id, JSON.stringify(data));
-            }
+        function saveToLocalStorage(id, data) {
+            localStorage.setItem(id, JSON.stringify(data));
+        }
 
-            function loadFromLocalStorage(id) {
-                return JSON.parse(localStorage.getItem(id));
-            }
+        function loadFromLocalStorage(id) {
+            return JSON.parse(localStorage.getItem(id));
+        }
 
-            function deletePaper(id, element) {
-                const confirmed = confirm("Delete this paper?");
-                if (!confirmed) return;
+        function deletePaper(id, element) {
+            const confirmed = confirm('Delete this paper?');
+            if (!confirmed) return;
+            localStorage.removeItem(id);
+            element.remove();
+            if (selectedPaper === element) selectPaper(null);
+        }
 
-                localStorage.removeItem(id);
-                element.remove();
-            }
+        function createPaper(id, position = { x: 100, y: 100 }, text = '', size = { w: 200, h: 60 }) {
+            const newPaper = document.createElement('div');
+            newPaper.className = 'paper';
+            newPaper.style.left = `${position.x}px`;
+            newPaper.style.top = `${position.y}px`;
+            newPaper.style.width = `${size.w}px`;
+            newPaper.style.height = `${size.h}px`;
+            newPaper.setAttribute('data-id', id);
 
-            function createPaper(
-                id,
-                position = { x: 100, y: 100 },
-                text = "",
-                size = { w: 200, h: 60 },
-            ) {
-                const newPaper = document.createElement("div");
-                newPaper.className = "paper";
-                newPaper.style.left = `${position.x}px`;
-                newPaper.style.top = `${position.y}px`;
-                newPaper.style.width = `${size.w}px`;
-                newPaper.style.height = `${size.h}px`;
-                newPaper.setAttribute("data-id", id);
+            const textarea = document.createElement('textarea');
+            textarea.placeholder = 'Write something...';
+            textarea.value = text;
 
-                const textarea = document.createElement("textarea");
-                textarea.placeholder = "Write something...";
-                textarea.value = text;
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'resize-handle';
 
-                const resizeHandle = document.createElement("div");
-                resizeHandle.className = "resize-handle";
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-button';
+            deleteButton.textContent = '×';
 
-                const deleteButton = document.createElement("button");
-                deleteButton.className = "delete-button";
-                deleteButton.textContent = "×";
+            newPaper.appendChild(textarea);
+            newPaper.appendChild(resizeHandle);
+            newPaper.appendChild(deleteButton);
+            document.body.appendChild(newPaper);
 
-                newPaper.appendChild(textarea);
-                newPaper.appendChild(resizeHandle);
-                newPaper.appendChild(deleteButton);
-                document.body.appendChild(newPaper);
-
-                function saveState() {
-                    saveToLocalStorage(id, {
-                        id,
-                        position: {
-                            x: parseInt(newPaper.style.left, 10),
-                            y: parseInt(newPaper.style.top, 10),
-                        },
-                        size: {
-                            w: newPaper.offsetWidth,
-                            h: newPaper.offsetHeight,
-                        },
-                        text: textarea.value,
-                    });
-                }
-
-                // Save text changes
-                textarea.addEventListener("input", saveState);
-
-                // Delete logic with confirmation
-                deleteButton.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    deletePaper(id, newPaper);
+            function saveState() {
+                saveToLocalStorage(id, {
+                    id,
+                    position: { x: parseInt(newPaper.style.left), y: parseInt(newPaper.style.top) },
+                    size: { w: newPaper.offsetWidth, h: newPaper.offsetHeight },
+                    text: textarea.value,
                 });
-
-                // Drag logic (mouse + touch)
-                let isDragging = false;
-                let offsetX = 0,
-                    offsetY = 0;
-
-                function startDrag(clientX, clientY) {
-                    isDragging = true;
-                    const rect = newPaper.getBoundingClientRect();
-                    offsetX = clientX - rect.left;
-                    offsetY = clientY - rect.top;
-                }
-
-                function moveDrag(clientX, clientY) {
-                    if (!isDragging) return;
-
-                    const x = clientX - offsetX;
-                    const y = clientY - offsetY;
-                    newPaper.style.left = `${x}px`;
-                    newPaper.style.top = `${y}px`;
-
-                    saveState();
-                }
-
-                function endDrag() {
-                    isDragging = false;
-                }
-
-                newPaper.addEventListener("mousedown", (e) => {
-                    if (e.target === resizeHandle || e.target === deleteButton)
-                        return;
-                    startDrag(e.clientX, e.clientY);
-                });
-
-                document.addEventListener("mousemove", (e) =>
-                    moveDrag(e.clientX, e.clientY),
-                );
-                document.addEventListener("mouseup", endDrag);
-
-                newPaper.addEventListener(
-                    "touchstart",
-                    (e) => {
-                        if (
-                            e.target === resizeHandle ||
-                            e.target === deleteButton
-                        )
-                            return;
-                        const touch = e.touches[0];
-                        startDrag(touch.clientX, touch.clientY);
-                        e.preventDefault();
-                    },
-                    { passive: false },
-                );
-
-                document.addEventListener(
-                    "touchmove",
-                    (e) => {
-                        if (!isDragging) return;
-                        const touch = e.touches[0];
-                        moveDrag(touch.clientX, touch.clientY);
-                        e.preventDefault();
-                    },
-                    { passive: false },
-                );
-
-                document.addEventListener("touchend", endDrag);
-
-                // Resize logic (mouse + touch)
-                let isResizing = false;
-                let startW, startH, startX, startY;
-
-                function startResize(clientX, clientY) {
-                    isResizing = true;
-                    startW = newPaper.offsetWidth;
-                    startH = newPaper.offsetHeight;
-                    startX = clientX;
-                    startY = clientY;
-                }
-
-                function moveResize(clientX, clientY) {
-                    if (!isResizing) return;
-
-                    const newW = Math.max(160, startW + (clientX - startX));
-                    const newH = Math.max(50, startH + (clientY - startY));
-
-                    newPaper.style.width = `${newW}px`;
-                    newPaper.style.height = `${newH}px`;
-
-                    saveState();
-                }
-
-                function endResize() {
-                    isResizing = false;
-                }
-
-                resizeHandle.addEventListener("mousedown", (e) => {
-                    startResize(e.clientX, e.clientY);
-                    e.stopPropagation();
-                });
-
-                document.addEventListener("mousemove", (e) =>
-                    moveResize(e.clientX, e.clientY),
-                );
-                document.addEventListener("mouseup", endResize);
-
-                resizeHandle.addEventListener(
-                    "touchstart",
-                    (e) => {
-                        const touch = e.touches[0];
-                        startResize(touch.clientX, touch.clientY);
-                        e.stopPropagation();
-                        e.preventDefault();
-                    },
-                    { passive: false },
-                );
-
-                document.addEventListener(
-                    "touchmove",
-                    (e) => {
-                        if (!isResizing) return;
-                        const touch = e.touches[0];
-                        moveResize(touch.clientX, touch.clientY);
-                        e.preventDefault();
-                    },
-                    { passive: false },
-                );
-
-                document.addEventListener("touchend", endResize);
-
-                return newPaper;
             }
 
-            // Initialize existing papers from localStorage
-            Object.keys(localStorage).forEach((key) => {
-                if (key.startsWith("paper-")) {
-                    const data = loadFromLocalStorage(key);
-                    createPaper(data.id, data.position, data.text, data.size);
-                }
+            textarea.addEventListener('input', saveState);
+
+            deleteButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deletePaper(id, newPaper);
             });
 
-            // Add new paper functionality (validate ID only on button press)
-            document
-                .getElementById("addButton")
-                .addEventListener("click", () => {
-                    let id;
-                    do {
-                        id = `paper-${paperIdCounter++}`;
-                    } while (localStorage.getItem(id));
+            // Selection
+            newPaper.addEventListener('mousedown', () => selectPaper(newPaper));
+            newPaper.addEventListener('touchstart', () => selectPaper(newPaper));
 
-                    createPaper(id);
-                });
+            // Drag logic
+            let isDragging = false;
+            let offsetX = 0, offsetY = 0;
+            let touchStartX = 0, touchStartY = 0;
+            let potentialTap = false;
+            const TAP_THRESHOLD = 6;
 
-            // Clear all functionality with confirmation
-            document
-                .getElementById("clearButton")
-                .addEventListener("click", () => {
-                    const confirmed = confirm(
-                        "Delete ALL papers? This cannot be undone.",
-                    );
-                    if (!confirmed) return;
+            function startDrag(clientX, clientY) {
+                isDragging = true;
+                const rect = newPaper.getBoundingClientRect();
+                offsetX = clientX - rect.left;
+                offsetY = clientY - rect.top;
+            }
 
-                    Object.keys(localStorage).forEach((key) => {
-                        if (key.startsWith("paper-")) {
-                            localStorage.removeItem(key);
-                        }
-                    });
+            function moveDrag(clientX, clientY) {
+                if (!isDragging) return;
+                const x = clientX - offsetX;
+                const y = clientY - offsetY;
+                newPaper.style.left = `${x}px`;
+                newPaper.style.top = `${y}px`;
+                saveState();
+            }
 
-                    document
-                        .querySelectorAll(".paper")
-                        .forEach((el) => el.remove());
-                });
-        </script>
-    </body>
+            function endDrag() {
+                isDragging = false;
+            }
+
+            newPaper.addEventListener('mousedown', (e) => {
+                if (e.target === resizeHandle || e.target === deleteButton) return;
+                startDrag(e.clientX, e.clientY);
+            });
+
+            document.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+            document.addEventListener('mouseup', endDrag);
+
+            // Touch: tap vs drag
+            newPaper.addEventListener('touchstart', (e) => {
+                if (e.target === resizeHandle || e.target === deleteButton) return;
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                potentialTap = true;
+                startDrag(touch.clientX, touch.clientY);
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                const dx = Math.abs(touch.clientX - touchStartX);
+                const dy = Math.abs(touch.clientY - touchStartY);
+                if (dx > TAP_THRESHOLD || dy > TAP_THRESHOLD) potentialTap = false;
+                moveDrag(touch.clientX, touch.clientY);
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchend', () => {
+                if (potentialTap) {
+                    textarea.focus();
+                }
+                endDrag();
+            });
+
+            // Resize logic
+            let isResizing = false;
+            let startW, startH, startX, startY;
+
+            function startResize(clientX, clientY) {
+                isResizing = true;
+                startW = newPaper.offsetWidth;
+                startH = newPaper.offsetHeight;
+                startX = clientX;
+                startY = clientY;
+            }
+
+            function moveResize(clientX, clientY) {
+                if (!isResizing) return;
+                const newW = Math.max(160, startW + (clientX - startX));
+                const newH = Math.max(50, startH + (clientY - startY));
+                newPaper.style.width = `${newW}px`;
+                newPaper.style.height = `${newH}px`;
+                saveState();
+            }
+
+            function endResize() { isResizing = false; }
+
+            resizeHandle.addEventListener('mousedown', (e) => {
+                startResize(e.clientX, e.clientY);
+                e.stopPropagation();
+            });
+
+            document.addEventListener('mousemove', (e) => moveResize(e.clientX, e.clientY));
+            document.addEventListener('mouseup', endResize);
+
+            resizeHandle.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                startResize(touch.clientX, touch.clientY);
+                e.stopPropagation();
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isResizing) return;
+                const touch = e.touches[0];
+                moveResize(touch.clientX, touch.clientY);
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchend', endResize);
+
+            return newPaper;
+        }
+
+        // Deselect when touching/clicking outside papers
+        document.addEventListener('mousedown', (e) => {
+            if (!e.target.closest('.paper')) selectPaper(null);
+        });
+
+        document.addEventListener('touchstart', (e) => {
+            if (!e.target.closest('.paper')) selectPaper(null);
+        });
+
+        // Load saved papers
+        Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith('paper-')) {
+                const data = loadFromLocalStorage(key);
+                createPaper(data.id, data.position, data.text, data.size);
+            }
+        });
+
+        // Add new paper
+        document.getElementById('addButton').addEventListener('click', () => {
+            let id;
+            do { id = `paper-${paperIdCounter++}`; } while (localStorage.getItem(id));
+            createPaper(id);
+        });
+
+        // Clear all
+        document.getElementById('clearButton').addEventListener('click', () => {
+            const confirmed = confirm('Delete ALL papers? This cannot be undone.');
+            if (!confirmed) return;
+            Object.keys(localStorage).forEach((key) => {
+                if (key.startsWith('paper-')) localStorage.removeItem(key);
+            });
+            document.querySelectorAll('.paper').forEach(el => el.remove());
+            selectPaper(null);
+        });
+    </script>
+</body>
 </html>
