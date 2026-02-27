@@ -85,3 +85,8 @@ textarea {
     color: white;
     background-color: black;
 }
+
+.small {
+    font-size: small;
+    color: gray;
+}
